@@ -1,0 +1,5 @@
+# Ignore all files in provided_tests folder
+provided_tests/
+
+# Ignore all .exe files
+*.exe

@@ -62,3 +62,8 @@
   These two files provide functionality that is needed to implement the 
   GetToken() method in lexer.cpp. You can safely ignore these two files 
   completely.
+
+
+Note to self:
+to run on non-unix os:
+Get-Content test9.txt | .\a

@@ -6,7 +6,9 @@
 #ifndef __PARSER_H__
 #define __PARSER_H__
 
+#include <unordered_map>
 #include <string>
+#include "reg.h"
 #include "lexer.h"
 
 class Parser {
@@ -14,13 +16,14 @@ class Parser {
     void parse_input();
     void readAndPrintAllInput();
   private:
+    std::unordered_map<std::string, reg> token_list;
     LexicalAnalyzer lexer;
     void syntax_error();
     Token expect(TokenType expected_type);
     void parse_tokens_section();
     void parse_token_list();
     void parse_token();
-    void parse_expr();
+    reg* parse_expr();
 };
 
 #endif

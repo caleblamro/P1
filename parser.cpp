@@ -9,7 +9,10 @@
  */
 #include <iostream>
 #include <cstdlib>
+#include <ostream>
+#include <unordered_set>
 #include "parser.h"
+#include "reg.h"
 
 using namespace std;
 
@@ -27,37 +30,82 @@ void Parser::syntax_error()
 // this function is particularly useful to match
 // terminals in a right hand side of a rule.
 // Written by Mohsen Zohrevandi
-Token Parser::expect(TokenType expected_type)
-{
+Token Parser::expect(TokenType expected_type) {
     Token t = lexer.GetToken();
     if (t.token_type != expected_type)
         syntax_error();
     return t;
 }
 
-void Parser::parse_expr()
-{
- 
+reg* Parser::parse_expr() {
+    Token t = lexer.peek(1);
+    reg* r = new reg(); // Dynamically allocate memory for a reg objects
+    if (t.token_type == CHAR || t.token_type == UNDERSCORE) {
+        if(t.token_type == UNDERSCORE) {
+            *r = reg('_');
+        } else {
+            t = lexer.GetToken();
+            char c = t.lexeme[0];
+            *r = reg(c);
+        }
+    } else if (t.token_type == LPAREN) {
+        lexer.GetToken();  // Consume the token
+        reg* expr1 = parse_expr();
+        expect(RPAREN);
+        Token op = lexer.peek(1);
+        if (op.token_type == DOT || op.token_type == OR) {
+            lexer.GetToken();  // Consume the token
+            expect(LPAREN);
+            reg* expr2 = parse_expr();
+            expect(RPAREN);
+            if(op.token_type == DOT) {
+                *r = expr1->concatenate(*expr2);
+            } else if(op.token_type == OR) {
+                *r = expr1->unionWith(*expr2);
+            }
+        } else if (op.token_type == STAR) {
+            //consume the star token
+            lexer.GetToken();
+            *r = expr1->applyKleeneStar();
+        } else {
+            syntax_error();
+        }
+    } else {
+        syntax_error();
+    }
+    return r;
 }
 
-void Parser::parse_token()
-{
-   
+void Parser::parse_token() {
+    Token t = expect(ID);
+    std::cout << "Parsed ID Lexeme: " + t.lexeme + "\n";
+    reg* r = parse_expr();
+    r->print();
 }
 
-void Parser::parse_token_list()
-{
-
+void Parser::parse_token_list() {
+    parse_token();
+    Token t = lexer.peek(1);
+    if (t.token_type == COMMA) {
+        lexer.GetToken();  // Consume the token
+        parse_token_list();
+    } else if (t.token_type == HASH) {
+        // Do nothing, we will consume HASH in parse_tokens_section
+    } else {
+        syntax_error();
+    }
 }
 
-void Parser::parse_tokens_section()
-{
-    
+
+void Parser::parse_tokens_section() {
+    parse_token_list();
+    //if we do not see this hash we should simply output "SYNTAX ERROR"
+    expect(HASH);
 }
 
-void Parser::parse_input()
-{
-    
+void Parser::parse_input() {
+    parse_tokens_section();
+    Token t = expect(INPUT_TEXT);
 }
 
 // This function simply reads and prints all tokens
@@ -66,8 +114,7 @@ void Parser::parse_input()
 // This function is not needed for your solution and it is only provided to
 // illustrate the basic functionality of getToken() and the Token type.
 
-void Parser::readAndPrintAllInput()
-{
+void Parser::readAndPrintAllInput() {
     Token t;
 
     // get a token
@@ -76,7 +123,7 @@ void Parser::readAndPrintAllInput()
     // while end of input is not reached
     while (t.token_type != END_OF_FILE) 
     {
-        t.Print();         	// pringt token
+        t.Print();         	// print token
         t = lexer.GetToken();	// and get another one
     }
         
@@ -92,7 +139,7 @@ int main()
     // If you declare another lexer object, lexical analysis will 
     // not work correctly
     Parser parser;
-
-    parser.readAndPrintAllInput();
+    parser.parse_input();
+    // parser.readAndPrintAllInput();
 	
 }

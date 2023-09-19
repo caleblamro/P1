@@ -219,7 +219,7 @@ Token LexicalAnalyzer::GetTokenMain()
 
     SkipSpace();
     tmp.lexeme = "";
-    tmp.line_no = line_no;
+    tmp.line_no = line_no;  
     tmp.token_type = END_OF_FILE;
     if (!input.EndOfInput())
         input.GetChar(c);

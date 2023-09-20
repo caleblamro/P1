@@ -8,7 +8,6 @@
 
 #include <vector>
 #include <string>
-
 #include "inputbuf.h"
 
 // ------- token types -------------------

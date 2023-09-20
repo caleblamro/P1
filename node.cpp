@@ -1,4 +1,4 @@
-#include "Node.h"
+#include "node.h"
 
 int Node::nodeCount = 0; // Initialize static member
 

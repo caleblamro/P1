@@ -17,13 +17,14 @@ class Parser {
     void readAndPrintAllInput();
   private:
     std::unordered_map<std::string, reg> token_list;
+    std::vector<reg> reg_list;
     LexicalAnalyzer lexer;
-    void syntax_error();
-    Token expect(TokenType expected_type);
+    void syntax_error(std::string);
+    Token expect(TokenType expected_type, std::string);
     void parse_tokens_section();
     void parse_token_list();
     void parse_token();
-    reg* parse_expr();
+    reg* parse_expr(Token);
 };
 
 #endif

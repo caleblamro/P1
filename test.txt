@@ -1,2 +1,2 @@
-tsTok2 (b)* #
-" bb "
+t4 ((f)*).(f) #
+" fff f ffffff "

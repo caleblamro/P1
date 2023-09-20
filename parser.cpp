@@ -10,17 +10,17 @@
 #include <iostream>
 #include <cstdlib>
 #include <ostream>
-#include <unordered_set>
+#include <unordered_map>
 #include "parser.h"
+#include "my_LexicalAnalyzer.h"
 #include "reg.h"
 
 using namespace std;
 
 // this syntax error function needs to be 
 // modified to produce the appropriate message
-void Parser::syntax_error()
-{
-    cout << "SYNTAX ERROR\n";
+void Parser::syntax_error(string errorMsg) {
+    cout << errorMsg;
     exit(1);
 }
 
@@ -30,34 +30,37 @@ void Parser::syntax_error()
 // this function is particularly useful to match
 // terminals in a right hand side of a rule.
 // Written by Mohsen Zohrevandi
-Token Parser::expect(TokenType expected_type) {
+Token Parser::expect(TokenType expected_type, string errorMsg) {
     Token t = lexer.GetToken();
-    if (t.token_type != expected_type)
-        syntax_error();
+    if (t.token_type != expected_type) {
+        syntax_error(errorMsg);
+    }
     return t;
 }
 
-reg* Parser::parse_expr() {
+reg* Parser::parse_expr(Token token_def) {
+    string errorMsg = "SYNTAX ERROR IN EXPRESSION OF " + token_def.lexeme + "\n";
     Token t = lexer.peek(1);
     reg* r = new reg(); // Dynamically allocate memory for a reg objects
     if (t.token_type == CHAR || t.token_type == UNDERSCORE) {
+        //in either case we will need to consume the token
+        t = lexer.GetToken();
         if(t.token_type == UNDERSCORE) {
-            *r = reg('_');
+            *r = reg(token_def, '_');
         } else {
-            t = lexer.GetToken();
             char c = t.lexeme[0];
-            *r = reg(c);
+            *r = reg(token_def, c);
         }
     } else if (t.token_type == LPAREN) {
         lexer.GetToken();  // Consume the token
-        reg* expr1 = parse_expr();
-        expect(RPAREN);
+        reg* expr1 = parse_expr(token_def);
+        expect(RPAREN, errorMsg);
         Token op = lexer.peek(1);
         if (op.token_type == DOT || op.token_type == OR) {
             lexer.GetToken();  // Consume the token
-            expect(LPAREN);
-            reg* expr2 = parse_expr();
-            expect(RPAREN);
+            expect(LPAREN, errorMsg);
+            reg* expr2 = parse_expr(token_def);
+            expect(RPAREN, errorMsg);
             if(op.token_type == DOT) {
                 *r = expr1->concatenate(*expr2);
             } else if(op.token_type == OR) {
@@ -68,19 +71,21 @@ reg* Parser::parse_expr() {
             lexer.GetToken();
             *r = expr1->applyKleeneStar();
         } else {
-            syntax_error();
+            syntax_error(errorMsg);
         }
     } else {
-        syntax_error();
+        syntax_error(errorMsg);
     }
     return r;
 }
 
 void Parser::parse_token() {
-    Token t = expect(ID);
-    std::cout << "Parsed ID Lexeme: " + t.lexeme + "\n";
-    reg* r = parse_expr();
-    r->print();
+    string e = "SNYTAX ERORR\n";
+    Token t = expect(ID, e);
+    // std::cout << "Parsed ID Lexeme: " + t.lexeme + "\n";
+    reg* r = parse_expr(t);
+    //add the reg to the list of reges
+    reg_list.push_back(*r);
 }
 
 void Parser::parse_token_list() {
@@ -92,20 +97,62 @@ void Parser::parse_token_list() {
     } else if (t.token_type == HASH) {
         // Do nothing, we will consume HASH in parse_tokens_section
     } else {
-        syntax_error();
+        string e = "SNYTAX ERORR\n";
+        syntax_error(e);
     }
 }
 
 
 void Parser::parse_tokens_section() {
     parse_token_list();
-    //if we do not see this hash we should simply output "SYNTAX ERROR"
-    expect(HASH);
+    string e = "SNYTAX ERORR\n";
+    expect(HASH, e);
 }
 
 void Parser::parse_input() {
     parse_tokens_section();
-    Token t = expect(INPUT_TEXT);
+    string e = "SNYTAX ERORR\n";
+    Token t = expect(INPUT_TEXT, e);
+    vector<string> regsThatAcceptEpsilon;
+    std::unordered_map<std::string, int> lexeme_to_line;
+    bool dup = false;
+    for (const auto& reg : reg_list) {
+        const auto& lexeme = reg.token_def.lexeme;
+        const auto& line_no = reg.token_def.line_no;
+        if (lexeme_to_line.find(lexeme) != lexeme_to_line.end()) {
+            std::cout << "Line " << line_no << ": " << lexeme << " already declared on line " << lexeme_to_line[lexeme] << std::endl;
+            dup = true;
+        } else {
+            lexeme_to_line[lexeme] = line_no;
+        }
+    }
+    if(dup) {
+        exit(1);
+    }
+    for(reg reg : reg_list) {
+        if(reg.acceptsEmptyString()) {
+            regsThatAcceptEpsilon.push_back(reg.token_def.lexeme);
+        }
+    }
+    if(regsThatAcceptEpsilon.size() > 0) {
+        string errorMsg = "EPSILON IS NOOOOOOOT A TOKEN !!! ";
+        for(const auto& s : regsThatAcceptEpsilon) {
+            errorMsg += " " + s;
+        }
+        errorMsg += "\n";
+        syntax_error(errorMsg);
+    }
+
+    //brokennnn
+    string input_string = t.lexeme;
+    my_LexicalAnalyzer myLexer = my_LexicalAnalyzer(reg_list, input_string);
+    while(true) {
+        MyToken t = myLexer.my_GetToken();
+        cout << t.token_type << ", " << "\"" << t.lexeme << "\"" << std::endl;
+        if(t.token_type.compare("EOF")) {
+            break;
+        }
+    }
 }
 
 // This function simply reads and prints all tokens
@@ -130,8 +177,7 @@ void Parser::readAndPrintAllInput() {
     // note that you should use END_OF_FILE and not EOF
 }
 
-int main()
-{
+int main() {
     // note: the parser class has a lexer object instantiated in it (see file
     // parser.h). You should not be declaring a separate lexer object. 
     // You can access the lexer object in the parser functions as shown in 

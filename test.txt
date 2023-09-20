@@ -1,2 +1,2 @@
-t4 ((f)*).(f) #
-" fff f ffffff "
+t9 ((i)|(x)).(q) #
+" iq xq ix "

@@ -22,27 +22,31 @@ MyToken my_LexicalAnalyzer::my_GetToken() {
     int max_p = -1;
     std::string chosen_reg_id;
     for(reg r : reg_list) {
-        std::cout << input_string.at(p) << "\n";
+        // std::cout << input_string.at(p) << "\n";
         while(std::isspace(input_string.at(p))) {
             p++;
         }
-        std::cout << "Calling match(" << r.token_def.lexeme << ", " << input_string << ", " << p << ")\n";
-        r.print();
+        // std::cout << "Calling match(" << r.token_def.lexeme << ", " << input_string << ", " << p << ")\n";
         int res = match(r, input_string, p);
-        std::cout << "Res: " << res << std::endl;
+        // std::cout << "Res: " << res << std::endl;
         if(res == -1) {
             std::cout << "ERROR" << std::endl;
             exit(1);
         }
+        if(res == -2) {
+            t.lexeme = "";
+            t.token_type = "EOF";
+            return t;
+        }
         if(res > max_p) {
             chosen_reg_id = r.token_def.lexeme;
-            std::cout << "Chosen_Reg: " << chosen_reg_id << "\n";
+            // std::cout << "Chosen_Reg: " << chosen_reg_id << "\n";
             max_p = res;
         }
     }
     t.lexeme = input_string.substr(p, max_p - p);
     t.token_type = chosen_reg_id;
-    p = max_p + 1;
+    p = max_p;
     return t;
 }
 

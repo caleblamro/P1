@@ -148,10 +148,10 @@ void Parser::parse_input() {
     my_LexicalAnalyzer myLexer = my_LexicalAnalyzer(reg_list, input_string);
     while(true) {
         MyToken t = myLexer.my_GetToken();
-        cout << t.token_type << ", " << "\"" << t.lexeme << "\"" << std::endl;
-        if(t.token_type.compare("EOF")) {
+        if(t.token_type == "EOF") {
             break;
         }
+        cout << t.token_type << ", " << "\"" << t.lexeme << "\"" << std::endl;
     }
 }
 

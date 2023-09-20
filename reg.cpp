@@ -105,12 +105,15 @@ int reg::match(std::string s, int p) {
 }
 
 int reg::matchHelper(Node* currentState, const std::string& s, int p, std::unordered_set<Node*>& visited) {
-    if(std::isspace(s.at(p)) || s.at(p) == '\"') {
-        return -1;
+    if(std::isspace(s.at(p))) {
+        return -3;
     }
-    if (visited.find(currentState) != visited.end()) {
-        return -1;  // Avoid cycles
+    if(s.at(p) == '\"') {
+        return -2;
     }
+    // if (visited.find(currentState) != visited.end()) {
+    //     return -1;  // Avoid cycles
+    // }
     visited.insert(currentState);
     int endIndex = -1;
     if (currentState == acceptState) {
@@ -119,15 +122,15 @@ int reg::matchHelper(Node* currentState, const std::string& s, int p, std::unord
 
     // Explore epsilon transitions
     auto transitions = currentState->getTransitions();
-    std::cout << "Exploring node " << currentState->getId() << "\n";
+    // std::cout << "Exploring node " << currentState->getId() << "\n";
     for (auto transition : transitions) {
         if (transition.c == '_') {
-            std::cout << currentState->getId() << " --" << transition.c << "-> " << transition.node->getId() << "\n";
+            // std::cout << currentState->getId() << " --" << transition.c << "-> " << transition.node->getId() << "\n";
             int newEndIndex = matchHelper(transition.node, s, p, visited);
             endIndex = std::max(endIndex, newEndIndex);
         }
         if (transition.c == s.at(p)) {
-            std::cout << currentState->getId() << " --" << transition.c << "-> " << transition.node->getId() << "\n";
+            // std::cout << currentState->getId() << " --" << transition.c << "-> " << transition.node->getId() << "\n";
             endIndex = p + 1;
             // std::cout << "Matching: ";
             int newEndIndex = matchHelper(transition.node, s, p+1, visited);
